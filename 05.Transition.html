@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Transition</title>
+</head>
+<body>
+  <svg height='600' width='600'></svg>
+  <script src="./lib/d3.v5.min.js"></script>
+  <script>
+    
+    let svg = d3.select('svg');
+    let circle = 
+        svg
+          .append('circle')
+          .attr('cx', 50)
+          .attr('cy', 50)
+          .attr('fill', 'red')
+          .attr('r', 10);
+    
+    //circle객체에 Transition 속성을 지정한다.
+    circle
+        .transition()
+        .delay(500) //최초 대기
+        .duration(3000) //3초 동안 움직인다
+        .attr('cx', 300) //50 --> 300
+        .attr('cy', 300) //50 --> 300
+        .attr('r', 100) //10 --> 100
+        .attr('fill', 'black');  //red --> black     
+
+  </script>
+</body>
+</html>
