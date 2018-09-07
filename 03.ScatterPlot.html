@@ -7,8 +7,7 @@
   </style>
 </head>
 <body>
-  <svg width="550" height="550">
-  </svg>
+  <div id="plot"></div>
   <script src="./lib/d3.v5.min.js"></script>
   <script src="./data/movie.js"></script>  
   <script>
@@ -21,23 +20,72 @@
         d.us_gross = parseFloat(d.us_gross);
         d.rotten_rating = parseFloat(d.rotten_rating);
     })
+    
+    //g tag의 위치를 transfer하는 함수
+    function translate(x,y) {
+      return 'translate('+ x + ',' + y +')';
+    }
 
-    let svg = d3.select('svg');
+    let svgWidth = 550;
+    let svgHeight = 550;    
+    let margin = {top:20, right:10, bottom:30, left:40};
+    
+    //margin을 감안하여 chart의 width, height를 계산
+    let width = svgWidth - margin.left - margin.right;
+    let height = svgHeight - margin.bottom - margin.top;
+    
+    //svg를 div tag에 코드로 추가함
+    let svg = 
+    d3.select('#plot')
+      .append('svg')
+        .attr('width',svgWidth)
+        .attr('height',svgHeight)
+        .append('g')
+          .attr('transform', translate(margin.left, margin.top)); //g tag를 margin만큼 transfer
 
+    //Scale 계산
+    let x = d3.scaleLinear()
+              .domain([
+                d3.min(data, d => d.rotten_rating),
+                d3.max(data, d => d.rotten_rating)
+              ]) //최대 최소값의 배열을 넣음
+              .range([0, width]); //최대 최소값의 배열을 넣음
+
+    let y = d3.scaleLinear()
+              .domain([
+                d3.min(data, d => d.us_gross),
+                d3.max(data, d => d.us_gross)
+              ]) //최대 최소값의 배열을 넣음
+              .range([height,0]); //최대 최소값의 배열을 넣음 / (0,0)이 좌상단 이므로 scale을 반대로 
+
+    let color = 
+    d3.scaleOrdinal()
+    .domain(['전체관람가', '7세이상', '15세이상', '19세이상'])
+    .range(['#3366cc', '#109618', '#ff9900', '#dc3912']);
+
+    //Point Draw
     svg.selectAll('circle')
         .data(data)
         .enter()
-        .append('circle')
-        .attr('r',3) //원의 반지름
-        .attr('cx', d => d.rotten_rating*5) //x 좌표 계산
-        .attr('cy', d => d.us_gross/5); //y 좌표 계산
+          .append('circle')
+          .attr('r',3) //원의 반지름
+          .attr('cx', d => x(d.rotten_rating)) //x 좌표 계산
+          .attr('cy', d => y(d.us_gross)) //y 좌표 계산
+          .style('fill', d => color(d.rating)); //color 채우기
 
-    //x,y의 min, max 값을 찾고 tick을 구해야함.
-    //d3.scale 에서 자동으로 계산해준다..
+    //Axis Draw
+    let xAxis = d3.axisBottom(x);
+    let yAxis = d3.axisLeft(y);
 
+    svg
+    .append('g')  //axis는 g tag로 그린다
+      .attr('transform',translate(0,height)) //xAxis의 위치이동
+      .call(xAxis);   //xAxis 함수에 attr에서 선언한 정보를 넘겨주는 명령
 
-
-
+    svg
+    .append('g')
+      .attr('transform',translate(0,0)) //yAxis의 위치이동
+      .call(yAxis);
 
   </script>
 </body>
