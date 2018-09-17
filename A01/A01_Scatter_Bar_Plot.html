@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <title>Scatterplot</title>
-  <style>
+  <style>    
     .leftChart {
         float: left;
       }
@@ -24,9 +24,14 @@
   <script src="./data/movie.js"></script>  
   <script>
 
+    //총 데이터 row수 확인
+    let row_cnt = 0; 
+
+    //string value to float value
     data.forEach(function (d){
         d.us_gross = parseFloat(d.us_gross);
         d.rotten_rating = parseFloat(d.rotten_rating);
+        row_cnt++;
     })
     
     //g tag의 위치를 transfer하는 함수
@@ -34,6 +39,7 @@
       return 'translate('+ x + ',' + y +')';
     }
 
+//============================== Scatter Plot ===========================================//
     let svgWidth = 550;
     let svgHeight = 550;    
     let margin = {top:20, right:10, bottom:120, left:40};
@@ -51,7 +57,7 @@
         .append('g')
           .attr('transform', translate(margin.left, margin.top)); //g tag를 margin만큼 transfer
 
-    //Scale 계산
+    //Axis Scale 계산
     let x = d3.scaleLinear()
               .domain([
                 d3.min(data, d => d.rotten_rating),
@@ -149,7 +155,7 @@
 
 //============================== Bar Plot ===========================================//
     //bar chart source
-    let b_svgWidth = 600;
+    let b_svgWidth = 800;
     let b_svgHeight = 550;    
     let b_margin = {top:20, right:10, bottom:120, left:40};
   
@@ -166,7 +172,7 @@
         .append('g')
           .attr('transform', translate(b_margin.left, b_margin.top)); //g tag를 margin만큼 transfer
     
-    //Scale 계산
+    //Axis Scale 계산
     let b_x = d3.scaleBand()
               .domain(data.map(function(d) { return d.title; })) //X축값 전체를 넣는다.
               .range([0, b_width]) 
@@ -180,14 +186,16 @@
               ]) //최대 최소값의 배열을 넣음
               .range([b_height,0]); //최대 최소값의 배열을 넣음 / (0,0)이 좌상단 이므로 scale을 반대로 
 
+    let d_max = d3.max(data, d=>d.us_gross);
+
     //Rect Draw
     b_svg.selectAll('rect')
         .data(data)
         .enter()
           .append('rect')
           .attr('width', 5) 
-          .attr('height', d => (d.us_gross / 4500) * b_height) //높이 계산
-          .attr('x', (d,i) => i * (5)) //x 좌표 계산
+          .attr('height', d => (d.us_gross / d_max) * b_height) //높이 계산
+          .attr('x', (d,i) => (b_width/row_cnt)*i) //x 좌표 계산
           .attr('y', function(d,i,nodes){
               return b_height - d3.select(this).attr('height');
               }) //y 좌표 계산
@@ -208,7 +216,8 @@
         .attr("dy", ".35em")
         .attr("transform", "rotate(90)") //Label 90도 회전
         .style("text-anchor", "start"); //x축 시작점에 맞춤
-  //X-Axis Label
+    
+    //X-Axis Label
     b_svg
     .append('g')
       .attr('transform', translate(0, b_height))
@@ -219,8 +228,6 @@
         .style('fill', 'black')
         .style("font-size", 10)
         .text('Movie Title'); 
-
-
 
     //Y-Axis Draw
     b_svg
@@ -238,11 +245,8 @@
           .style('fill', 'black')
           .text('미국 내 수익');
 
-
-    
-
-  //Legend Draw        
-  let b_legend = b_svg
+    //Legend Draw        
+    let b_legend = b_svg
     .selectAll('.legend')
     .data(color.domain())
     .enter()
