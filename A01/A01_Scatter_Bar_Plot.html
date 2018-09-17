@@ -2,212 +2,182 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Scatterplot with Select</title>
+  <title>Scatterplot</title>
   <style>
+    .leftChart {
+        float: left;
+      }
+    .rightChart {
+        margin-left: 10px;
+      }
   </style>
 </head>
 <body>
-  <div id="plot"></div>
-  <div id="option"></div>
+  <div>
+      <div class="leftChart" id="plot"></div>
+  </div>
+  <div>
+      <div class="rightChart" id="bplot"></div>
+  </div>
+
   <script src="./lib/d3.v5.min.js"></script>
-  <script src="./data/movie.js"></script>
+  <script src="./data/movie.js"></script>  
   <script>
 
-    function translate(x, y) {
-      return 'translate(' + x + ', ' + y + ')';
-    }
-
-    function duration(transition) {
-        return transition.duration(500);
-    }
-
-    data.forEach(function(d) {
-        d.budget = parseFloat(d.budget);
+    data.forEach(function (d){
         d.us_gross = parseFloat(d.us_gross);
-        d.worldwide_gross = parseFloat(d.worldwide_gross);
         d.rotten_rating = parseFloat(d.rotten_rating);
-        d.imdb_rating = parseFloat(d.imdb_rating);
-        d.imdb_votes = parseFloat(d.imdb_votes);
-    });
+    })
+    
+    //g tag의 위치를 transfer하는 함수
+    function translate(x,y) {
+      return 'translate('+ x + ',' + y +')';
+    }
 
     let svgWidth = 550;
-    let svgHeight = 550;
-    let margin = {top: 20, right: 10, bottom:30, left: 40};
+    let svgHeight = 550;    
+    let margin = {top:20, right:10, bottom:30, left:40};
+    
+    //margin을 감안하여 chart의 width, height를 계산
     let width = svgWidth - margin.left - margin.right;
-    let height = svgHeight - margin.top - margin.bottom;
-    let svg =
+    let height = svgHeight - margin.bottom - margin.top;
+    
+    //svg를 div tag에 코드로 추가함
+    let svg = 
     d3.select('#plot')
-    .append('svg')
-      .attr('width', svgWidth)
-      .attr('height', svgHeight)
+      .append('svg')
+        .attr('width',svgWidth)
+        .attr('height',svgHeight)
+        .append('g')
+          .attr('transform', translate(margin.left, margin.top)); //g tag를 margin만큼 transfer
+
+    let bsvg = 
+    d3.select('#bplot')
+      .append('svg')
+      .attr('width',svgWidth)
+      .attr('height',svgHeight)
       .append('g')
-        .attr('transform', translate(margin.left, margin.top));
+        .attr('transform', translate(margin.left, margin.top)); //g tag를 margin만큼 transfer
 
-    let options = ['budget', 'us_gross', 'worldwide_gross',
-    'rotten_rating', 'imdb_rating', 'imdb_votes'];
-    let selectedXVar = options[0];
-    let selectedYVar = options[1];
+    //Scale 계산
+    let x = d3.scaleLinear()
+              .domain([
+                d3.min(data, d => d.rotten_rating),
+                d3.max(data, d => d.rotten_rating)
+              ]) //최대 최소값의 배열을 넣음
+              .range([0, width]); //최대 최소값의 배열을 넣음
 
-    let x = d3.scaleLinear();
-    let y = d3.scaleLinear();
-    let xAxis = d3.axisBottom();
-    let yAxis = d3.axisLeft();
+    let y = d3.scaleLinear()
+              .domain([
+                d3.min(data, d => d.us_gross),
+                d3.max(data, d => d.us_gross)
+              ]) //최대 최소값의 배열을 넣음
+              .range([height,0]); //최대 최소값의 배열을 넣음 / (0,0)이 좌상단 이므로 scale을 반대로 
 
-    function init() {
+    //Scale 계산
+    let bx = d3.scaleBand()
+              .domain([
+                d3.min(data, d => d.rotten_rating),
+                d3.max(data, d => d.rotten_rating)
+              ]) //최대 최소값의 배열을 넣음
+              .range([0, width]); //최대 최소값의 배열을 넣음
 
-        d3.select('#option')
-        .append('div')
-            .attr('id', 'x-axis-option')
-            .append('p')
-                .style('display', 'inline')
-                .text('X-Axis : ');
-        
-        d3.select('#x-axis-option')
-        .append('select')
-            .attr('id', 'x-select')
-            .selectAll('option')
-            .data(options)
-            .enter()
-            .append('option')
-                .attr('id', d => 'x-' + d)
-                .text(d => d)
-                .property('value', d => d);
+    let by = d3.scaleBand()
+              .domain([
+                d3.min(data, d => d.us_gross),
+                d3.max(data, d => d.us_gross)
+              ]) //최대 최소값의 배열을 넣음
+              .range([height,0]); //최대 최소값의 배열을 넣음 / (0,0)이 좌상단 이므로 scale을 반대로 
 
-        d3.select('#option')
-        .append('div')
-            .attr('id', 'y-axis-option')
-            .append('p')
-                .style('display', 'inline')
-                .text('Y-Axis : ');
 
-        d3.select('#y-axis-option')
-        .append('select')
-            .attr('id', 'y-select')
-            .selectAll('option')
-            .data(options)
-            .enter()
-            .append('option')
-                .attr('id', d => 'y-' + d)
-                .text(d => d)
-                .property('value', d => d);
+    let color = 
+    d3.scaleOrdinal()
+    .domain(['전체관람가', '7세이상', '15세이상', '19세이상'])
+    .range(['#3366cc', '#109618', '#ff9900', '#dc3912']);
 
-        d3.select('#x-' + selectedXVar)
-        .attr('selected', 'selected');
-        d3.select('#y-' + selectedYVar)
-        .attr('selected', 'selected');
-
-        d3.select('#option')
-        .on('change', function() {
-            selectedXVar = d3.select('#x-select').property('value');
-            selectedYVar = d3.select('#y-select').property('value');
-            update();
-        });
-
-        svg
-        .append('g')
-            .attr('class', 'x axis')
-            .attr('transform', translate(0, height))          
-            .append('text')
-                .attr('class', 'x-label')
-                .attr('x', width)
-                .attr('y', -6)
-                .style('text-anchor', 'end')
-                .style('fill', 'black');
-
-        svg
-        .append('g')
-            .attr('class', 'y axis')         
-            .append('text')
-                .attr('class', 'y-label')
-                .attr('transform', 'rotate(-90)')
-                .attr('y', 13)
-                .style('fill', 'black');
-
-        let color = d3.scaleOrdinal()
-        .domain(['전체관람가', '7세이상', '15세이상', '19세이상'])
-        .range(['#3366cc', '#109618', '#ff9900', '#dc3912']);
-
-        svg
-        .selectAll('circle')
+    //Point Draw
+    svg.selectAll('circle')
         .data(data)
         .enter()
-        .append('circle')
-        .attr('r', 3.5)
-        .style('fill', d => color(d.rating));
+          .append('circle')
+          .attr('r',3) //원의 반지름
+          .attr('cx', d => x(d.rotten_rating)) //x 좌표 계산
+          .attr('cy', d => y(d.us_gross)) //y 좌표 계산
+          .style('fill', d => color(d.rating)); //color 채우기
 
-        let legend = svg
-        .selectAll('.legend')
-        .data(color.domain())
+    bsvg.selectAll('rect')
+        .data(data)
         .enter()
-        .append('g')
-            .attr('transform', (d, i) => {
-                return translate(0, i * 20);
-            });
-        
-        legend
-        .append('rect')
-            .attr('x', width - 18)
-            .attr('width', 18)
-            .attr('height', 18)
-            .style('fill', color);
+          .append('rect')
+          .attr('cx', d => bx(d.rotten_rating)) //x 좌표 계산
+          .attr('cy', d => by(d.us_gross)) //y 좌표 계산
+          .style('fill', d => color(d.rating)); //color 채우기
 
-        legend
-        .append('text')
-            .attr('x', width - 24)
-            .attr('y', 9)
-            .attr('dy', 5)
-            .style('text-anchor', 'end')
-            .text(d => d);
 
-        update();
-    }
+    //Axis function 선언
+    let xAxis = d3.axisBottom(x);
+    let yAxis = d3.axisLeft(y);
 
-    function updateScale() {
-        x
-        .domain([
-            d3.min(data, d => d[selectedXVar]),
-            d3.max(data, d => d[selectedXVar])
-        ])
-        .range([0, width]);
-        xAxis.scale(x);
+    //X-Axis Draw
+    svg
+    .append('g')  //axis는 g tag로 그린다
+      .attr('transform',translate(0,height)) //xAxis의 위치이동
+      .call(xAxis);   //xAxis 함수에 attr에서 선언한 정보를 넘겨주는 명령
 
-        y
-        .domain([
-            d3.min(data, d => d[selectedYVar]),
-            d3.max(data, d => d[selectedYVar])
-        ])
-        .range([height, 0]);
-        yAxis.scale(y);
-    }
+    //Y-Axis Draw
+    svg
+    .append('g')
+      .attr('transform',translate(0,0)) //yAxis의 위치이동
+      .call(yAxis);
 
-    function updateAxis() {
-        d3.select('.x').transition().call(duration).call(xAxis);
-        d3.select('.y').transition().call(duration).call(yAxis);
-    }
+    //X-Axis Label
+    svg
+    .append('g')
+      .attr('transform', translate(0, height))
+      .call(xAxis)
+      .append('text')
+        .attr('x', width)
+        .attr('y', -6)        
+        .style('text-anchor', 'end')  //글자의 끝을 축의 끝에 맞춰라
+        .style('fill', 'black')
+        .text('로튼토마토 평점');
 
-    function updateText() {
-        svg.select('.x-label').text(selectedXVar);
-        svg.select('.y-label').text(selectedYVar);
-    }
+    //Y-Axis Label
+    svg
+    .append('g')
+      .call(yAxis)
+      .append('text')
+        .attr('transform', 'rotate(-90)') //글자를 회전
+        .attr('y', 13)
+        .style('fill', 'black')
+        .text('미국 내 수익');
 
-    function updateCircles() {
-        svg
-        .selectAll('circle')
-        .transition()
-        .call(duration)
-        .attr('cx', d => x(d[selectedXVar]))
-        .attr('cy', d => y(d[selectedYVar]));
-    }
-
-    function update() {
-        updateScale();
-        updateAxis();
-        updateText();
-        updateCircles();
-    }
-
-    init();
-
+    //Legend Draw        
+    let legend = svg
+    .selectAll('.legend')
+    .data(color.domain())
+    .enter()
+    .append('g')  //Legend 위치에 g tag 4개 추가하고 겹치지 않도록 위치 조정
+      .attr('transform', (d, i) => {
+        return translate(0, i * 20);
+      });
+   
+    //Legend Box Draw
+    legend
+    .append('rect')
+      .attr('x', width - 18)
+      .attr('width', 18)
+      .attr('height', 18)
+      .style('fill', color);
+    
+    //Legend Text Draw 
+    legend
+    .append('text')
+      .attr('x', width - 24)
+      .attr('y', 9)
+      .attr('dy', 5)
+      .style('text-anchor', 'end')
+      .text(d => d);
   </script>
 </body>
 </html>
