@@ -34,68 +34,76 @@
       return 'translate('+ x + ',' + y +')';
     }
 
-    let svgWidth = 550;
-    let svgHeight = 550;    
-    let margin = {top:20, right:10, bottom:30, left:40};
-    let maxHeight = 200;
-    let maxScore = 3000;
-    let maxWidth = 30;
-
+    let b_svgWidth = 600;
+    let b_svgHeight = 550;    
+    let b_margin = {top:20, right:10, bottom:120, left:40};
+  
     //margin을 감안하여 chart의 width, height를 계산
-    let width = svgWidth - margin.left - margin.right;
-    let height = svgHeight - margin.bottom - margin.top;
-    
+    let b_width = b_svgWidth - b_margin.left - b_margin.right;
+    let b_height = b_svgHeight - b_margin.bottom - b_margin.top;
+
     //svg를 div tag에 코드로 추가함
-    let svg = 
+    let b_svg = 
     d3.select('#plot')
       .append('svg')
-        .attr('width',svgWidth)
-        .attr('height',svgHeight)
+        .attr('width',b_svgWidth)
+        .attr('height',b_svgHeight)
         .append('g')
-          .attr('transform', translate(margin.left, margin.top)); //g tag를 margin만큼 transfer
+          .attr('transform', translate(b_margin.left, b_margin.top)); //g tag를 margin만큼 transfer
     
     //Scale 계산
-    let x = d3.scaleBand()
-              .domain([
-                d3.min(data, d => d.rotten_rating),
-                d3.max(data, d => d.rotten_rating)
-              ]) //최대 최소값의 배열을 넣음
-              .range([0, width]); //최대 최소값의 배열을 넣음
+    let b_x = d3.scaleBand()
+              .domain(data.map(function(d) { return d.title; })) //최대 최소값의 배열을 넣음
+              .range([0, b_width]) //최대 최소값의 배열을 넣음
+              .paddingInner([0.5])
+              .paddingOuter([0.5]);
 
-    let y = d3.scaleBand()
+    let b_y = d3.scaleLinear()
               .domain([
                 d3.min(data, d => d.us_gross),
                 d3.max(data, d => d.us_gross)
               ]) //최대 최소값의 배열을 넣음
-              .range([height,0]); //최대 최소값의 배열을 넣음 / (0,0)이 좌상단 이므로 scale을 반대로 
+              .range([b_height,0]); //최대 최소값의 배열을 넣음 / (0,0)이 좌상단 이므로 scale을 반대로 
+
+   let color = 
+    d3.scaleOrdinal()
+    .domain(['전체관람가', '7세이상', '15세이상', '19세이상'])
+    .range(['#3366cc', '#109618', '#ff9900', '#dc3912']);
 
     //Point Draw
-    svg.selectAll('rect')
+    b_svg.selectAll('rect')
         .data(data)
         .enter()
           .append('rect')
-          .attr('width', 30) //y 좌표 계산
-          .attr('height', d => (d.us_gross / maxScore) * maxHeight) //y 좌표 계산
-          .attr('x', (d,i) => i * (maxWidth + 30)) //x 좌표 계산
+          .attr('width', 5) //y 좌표 계산
+          .attr('height', d => (d.us_gross / 4500) * b_height) //y 좌표 계산
+          .attr('x', (d,i) => i * (5)) //x 좌표 계산
           .attr('y', function(d,i,nodes){
-              return maxHeight - d3.select(this).attr('height');
-              }) //y 좌표 계산
+              return b_height - d3.select(this).attr('height');
+              })
+          .attr("fill", d => color(d.rating)); //y 좌표 계산
 
     //Axis function 선언
-    let xAxis = d3.axisBottom(x);
-    let yAxis = d3.axisLeft(y);
+    let b_xAxis = d3.axisBottom(b_x);
+    let b_yAxis = d3.axisLeft(b_y);
 
     //X-Axis Draw
-    svg
+    b_svg
     .append('g')  //axis는 g tag로 그린다
-      .attr('transform',translate(0,height)) //xAxis의 위치이동
-      .call(xAxis);   //xAxis 함수에 attr에서 선언한 정보를 넘겨주는 명령
+      .attr('transform',translate(0,b_height)) //xAxis의 위치이동
+      .call(b_xAxis)   //xAxis 함수에 attr에서 선언한 정보를 넘겨주는 명령
+      .selectAll("text")
+        .attr("y", 0)
+        .attr("x", 9)
+        .attr("dy", ".35em")
+        .attr("transform", "rotate(90)")
+        .style("text-anchor", "start");
 
     //Y-Axis Draw
-    svg
+    b_svg
     .append('g')
       .attr('transform',translate(0,0)) //yAxis의 위치이동
-      .call(yAxis);
+      .call(b_yAxis);
   
   </script>
 </body>
