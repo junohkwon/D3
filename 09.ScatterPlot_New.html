@@ -125,7 +125,6 @@
         .append('g')
         .attr('id','x_axis')
         .attr('transform', translate(0, height))
-        .call(xAxis)
         .append('text')
             .attr('id','x_label')
             .attr('x', width)
@@ -136,7 +135,6 @@
         svg
         .append('g')
         .attr('id','y_axis')
-        .call(yAxis)
         .append('text')
             .attr('id','y_label')
             .attr('transform', 'rotate(-90)')
